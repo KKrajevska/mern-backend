@@ -1,51 +1,35 @@
 import express from "express";
-import { HttpError } from "../models/httpError";
+import {
+  createPlace,
+  deletePlace,
+  getPlaceById,
+  getPlacesByUserId,
+  updatePlace,
+} from "../controllers/placesController";
+import { check } from "express-validator";
 
 const placesRoutes = express.Router();
 
-const DUMMY_PLACES = [
-  {
-    id: "p1",
-    title: "Empire State Building",
-    description: "One of the most famous skyscrapers in the world!",
-    location: {
-      lat: 40.7484474,
-      lng: -73.9871516,
-    },
-    address: "20 W 34th St., New York, NY 10001",
-    creator: "u1",
-  },
-];
+placesRoutes.get("/:pid", getPlaceById);
 
-placesRoutes.get("/:pid", (req, res, next) => {
-  const placeId = req.params.pid;
-  const place = DUMMY_PLACES.find((p) => p.id === placeId);
+placesRoutes.get("/user/:uid", getPlacesByUserId);
 
-  if (!place) {
-    const error = new HttpError(
-      "Could not find a place for the provided id",
-      404
-    );
+placesRoutes.post(
+  "/",
+  [
+    check("title").not().isEmpty(),
+    check("description").isLength({ min: 5 }),
+    check("address").not().isEmpty(),
+  ],
+  createPlace
+);
 
-    throw error;
-  }
+placesRoutes.patch(
+  "/:pid",
+  [check("title").not().isEmpty(), check("description").isLength({ min: 5 })],
+  updatePlace
+);
 
-  res.json({ place });
-});
+placesRoutes.delete("/:pid", deletePlace);
 
-placesRoutes.get("/user/:uid", (req, res, next) => {
-  const userId = req.params.uid;
-  const place = DUMMY_PLACES.find((p) => p.creator === userId);
-
-  if (!place) {
-    const error = new HttpError(
-      "Could not find a place for the provided id",
-      404
-    );
-
-    return next(error);
-  }
-
-  res.json({ place });
-});
 export default placesRoutes;
