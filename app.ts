@@ -14,7 +14,7 @@ const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   res.status(error.code || 500);
   res.json({ message: error.message || "An unknown error occured" });
 };
-// kiki
+
 app.use(errorHandler);
 
 app.listen(5000);
