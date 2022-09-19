@@ -8,7 +8,9 @@ import bodyParser from "body-parser";
 import placesRoutes from "./routes/placesRoutes";
 import { HttpError } from "./models/httpError";
 import mongoose from "mongoose";
+import sanitizedConfig from "./config";
 
+require("dotenv").config();
 const app = express();
 
 app.use(bodyParser.json());
@@ -31,8 +33,6 @@ const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
 app.use(errorHandler);
 
 mongoose
-  .connect(
-    "mongodb+srv://kristina:3NXTBzvEF8sEOh4V@cluster0.qxsulmc.mongodb.net/?retryWrites=true&w=majority"
-  )
+  .connect(sanitizedConfig.MONGO_URI)
   .then(() => app.listen(5000))
   .catch((err) => console.log(err));
