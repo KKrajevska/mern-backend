@@ -7,6 +7,7 @@ import express, {
 import bodyParser from "body-parser";
 import placesRoutes from "./routes/placesRoutes";
 import { HttpError } from "./models/httpError";
+import mongoose from "mongoose";
 
 const app = express();
 
@@ -29,4 +30,9 @@ const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
 
 app.use(errorHandler);
 
-app.listen(5000);
+mongoose
+  .connect(
+    "mongodb+srv://kristina:3NXTBzvEF8sEOh4V@cluster0.qxsulmc.mongodb.net/?retryWrites=true&w=majority"
+  )
+  .then(() => app.listen(5000))
+  .catch((err) => console.log(err));

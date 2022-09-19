@@ -4,6 +4,7 @@ import { PlaceT } from "../lib/types";
 import { HttpError } from "../models/httpError";
 import { v4 as uuidv4 } from "uuid";
 import { validationResult } from "express-validator";
+import PlaceModel from "../models/place";
 let DUMMY_PLACES: PlaceT[] = [
   {
     id: "p1",
@@ -18,13 +19,22 @@ let DUMMY_PLACES: PlaceT[] = [
   },
 ];
 
-export const getPlaceById = (
+export const getPlaceById = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   const placeId = req.params.pid;
-  const place = DUMMY_PLACES.find((p) => p.id === placeId);
+  let place;
+  try {
+    place = await PlaceModel.findById(placeId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a place",
+      500
+    );
+    return next(error);
+  }
 
   if (!place) {
     const error = new HttpError(
@@ -32,19 +42,29 @@ export const getPlaceById = (
       404
     );
 
-    throw error;
+    return next(error);
   }
 
-  res.json({ place });
+  res.json({ place: place.toObject({ getters: true }) });
 };
 
-export const getPlacesByUserId = (
+export const getPlacesByUserId = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   const userId = req.params.uid;
-  const places = DUMMY_PLACES.filter((p) => p.creator === userId);
+  let places;
+
+  try {
+    places = await PlaceModel.find({ creator: userId });
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching places failed, please try again later",
+      500
+    );
+    return next(error);
+  }
 
   if (places.length === 0) {
     const error = new HttpError(
@@ -55,10 +75,12 @@ export const getPlacesByUserId = (
     return next(error);
   }
 
-  res.json({ places });
+  res.json({
+    places: places.map((place) => place.toObject({ getters: true })),
+  });
 };
 
-export const createPlace = (
+export const createPlace = async (
   req: Request<{}, {}, PlaceT>,
   res: Response,
   next: NextFunction
@@ -70,16 +92,25 @@ export const createPlace = (
   }
 
   const { title, description, location, address, creator } = req.body;
-  const createdPlace = {
-    id: uuidv4(),
+  const createdPlace = new PlaceModel({
     title,
     description,
-    location,
     address,
+    location,
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Empire_State_Building_%28aerial_view%29.jpg/400px-Empire_State_Building_%28aerial_view%29.jpg",
     creator,
-  };
+  });
 
-  DUMMY_PLACES.push(createdPlace);
+  try {
+    await createdPlace.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Creating place failed, please try again.",
+      500
+    );
+    return next(error);
+  }
 
   res.status(201).json({ place: createdPlace });
 };
