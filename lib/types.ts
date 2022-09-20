@@ -12,9 +12,19 @@ export interface PlaceT {
   creator: string;
 }
 
+export interface PlaceModelT {
+  title: string;
+  description: string;
+  image: string;
+  address: string;
+  location: LocationT;
+  creator: string;
+}
+
 export interface UserT {
   id?: string;
   name: string;
   email: string;
   password: string;
+  places: string;
 }

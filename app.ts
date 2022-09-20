@@ -9,12 +9,14 @@ import placesRoutes from "./routes/placesRoutes";
 import { HttpError } from "./models/httpError";
 import mongoose from "mongoose";
 import sanitizedConfig from "./config";
+import usersRoutes from "./routes/usersRoutes";
 
 require("dotenv").config();
 const app = express();
 
 app.use(bodyParser.json());
 app.use("/api/places", placesRoutes);
+app.use("/api/users", usersRoutes);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const error = new HttpError("Could not find this route.", 404);

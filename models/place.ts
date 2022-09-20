@@ -1,8 +1,16 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose, { Document, model, Schema } from "mongoose";
+import { LocationT } from "../lib/types";
 
-const Schema = mongoose.Schema;
+interface PlaceSchema {
+  title: string;
+  description: string;
+  image: string;
+  address: string;
+  location: LocationT;
+  creator: any;
+}
 
-const placeSchema = new Schema({
+const placeSchema = new Schema<PlaceSchema>({
   title: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String, required: true },
@@ -11,9 +19,9 @@ const placeSchema = new Schema({
     lat: { type: Number, required: true },
     lng: { type: Number, required: true },
   },
-  creator: { type: String, required: true },
+  creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
 });
 
-const PlaceModel = mongoose.model("Place", placeSchema);
+const PlaceModel = model<PlaceSchema>("Place", placeSchema);
 
 export default PlaceModel;

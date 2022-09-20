@@ -1,10 +1,12 @@
 import { create } from "domain";
 import { NextFunction, Request, Response } from "express";
-import { PlaceT } from "../lib/types";
+import { PlaceModelT, PlaceT } from "../lib/types";
 import { HttpError } from "../models/httpError";
 import { v4 as uuidv4 } from "uuid";
 import { validationResult } from "express-validator";
 import PlaceModel from "../models/place";
+import UserModel from "../models/user";
+import { startSession } from "mongoose";
 let DUMMY_PLACES: PlaceT[] = [
   {
     id: "p1",
@@ -68,7 +70,7 @@ export const getPlacesByUserId = async (
 
   if (places.length === 0) {
     const error = new HttpError(
-      "Could not find a places for the provided id",
+      "Could not find places for the provided id",
       404
     );
 
@@ -102,8 +104,30 @@ export const createPlace = async (
     creator,
   });
 
+  let user;
+
   try {
-    await createdPlace.save();
+    user = await UserModel.findById(creator);
+  } catch (err) {
+    const error = new HttpError(
+      "Creating place failed, please try again later",
+      500
+    );
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Could not find user for the provided id", 404);
+    return next(error);
+  }
+
+  try {
+    const sess = await startSession();
+    sess.startTransaction();
+    await createdPlace.save({ session: sess });
+    user.places.push(createdPlace as any);
+    await user.save({ session: sess });
+    await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
       "Creating place failed, please try again.",
@@ -111,11 +135,10 @@ export const createPlace = async (
     );
     return next(error);
   }
-
   res.status(201).json({ place: createdPlace });
 };
 
-export const updatePlace = (
+export const updatePlace = async (
   req: Request<{ pid: string }, {}, { title: string; description: string }>,
   res: Response,
   next: NextFunction
@@ -129,28 +152,80 @@ export const updatePlace = (
   const { title, description } = req.body;
   const placeId = req.params.pid;
 
-  const updatedPlace = { ...DUMMY_PLACES.find((p) => p.id === placeId) };
-  const placeIndex = DUMMY_PLACES.findIndex((p) => p.id === placeId);
+  // const updatedPlace = { ...DUMMY_PLACES.find((p) => p.id === placeId) };
 
-  updatedPlace.title = title;
-  updatedPlace.description = description;
+  let place;
 
-  DUMMY_PLACES[placeIndex] = updatedPlace as PlaceT;
+  try {
+    place = await PlaceModel.findById(placeId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update place",
+      500
+    );
+    return next(error);
+  }
 
-  res.status(200).json({ place: updatedPlace });
+  if (place) {
+    place.title = title;
+    place.description = description;
+
+    try {
+      await place.save();
+    } catch (err) {
+      const error = new HttpError(
+        "Something went wrong, could not update place",
+        500
+      );
+      return next(error);
+    }
+
+    res.status(200).json({ place: place.toObject({ getters: true }) });
+  } else {
+    const error = new HttpError(
+      "Could not find a place for the provided id",
+      404
+    );
+    return next(error);
+  }
 };
 
-export const deletePlace = (
+export const deletePlace = async (
   req: Request<{ pid: string }>,
   res: Response,
   next: NextFunction
 ) => {
   const placeId = req.params.pid;
 
-  if (!DUMMY_PLACES.find((p) => p.id === placeId)) {
-    throw new HttpError("Could not find a place for that id", 404);
+  let place;
+
+  try {
+    place = await PlaceModel.findById(placeId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete place.",
+      500
+    );
+    return next(error);
   }
 
-  DUMMY_PLACES = DUMMY_PLACES.filter((p) => p.id !== placeId);
+  if (place) {
+    try {
+      await place.remove();
+    } catch (err) {
+      const error = new HttpError(
+        "Something went wrong, could not delete place.",
+        500
+      );
+      return next(error);
+    }
+  } else {
+    const error = new HttpError(
+      "Could not find a place for the provided id",
+      404
+    );
+    return next(error);
+  }
+
   res.status(200).json({ message: "Deleted place" });
 };
