@@ -5,7 +5,7 @@ import { HttpError } from "../models/httpError";
 import { v4 as uuidv4 } from "uuid";
 import { validationResult } from "express-validator";
 import PlaceModel from "../models/place";
-import UserModel from "../models/user";
+import UserModel, { UserSchema } from "../models/user";
 import { startSession } from "mongoose";
 let DUMMY_PLACES: PlaceT[] = [
   {
@@ -125,7 +125,7 @@ export const createPlace = async (
     const sess = await startSession();
     sess.startTransaction();
     await createdPlace.save({ session: sess });
-    user.places.push(createdPlace as any);
+    user.places.push(createdPlace);
     await user.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
@@ -166,28 +166,27 @@ export const updatePlace = async (
     return next(error);
   }
 
-  if (place) {
-    place.title = title;
-    place.description = description;
-
-    try {
-      await place.save();
-    } catch (err) {
-      const error = new HttpError(
-        "Something went wrong, could not update place",
-        500
-      );
-      return next(error);
-    }
-
-    res.status(200).json({ place: place.toObject({ getters: true }) });
-  } else {
+  if (!place) {
     const error = new HttpError(
       "Could not find a place for the provided id",
       404
     );
     return next(error);
   }
+  place.title = title;
+  place.description = description;
+
+  try {
+    await place.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not update place",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ place: place.toObject({ getters: true }) });
 };
 
 export const deletePlace = async (
@@ -200,7 +199,10 @@ export const deletePlace = async (
   let place;
 
   try {
-    place = await PlaceModel.findById(placeId);
+    // place = await PlaceModel.findById(placeId).populate("creator");
+    place = await PlaceModel.findById(placeId).populate<{
+      creator: UserSchema;
+    }>("creator");
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not delete place.",
@@ -209,20 +211,24 @@ export const deletePlace = async (
     return next(error);
   }
 
-  if (place) {
-    try {
-      await place.remove();
-    } catch (err) {
-      const error = new HttpError(
-        "Something went wrong, could not delete place.",
-        500
-      );
-      return next(error);
-    }
-  } else {
+  if (!place) {
     const error = new HttpError(
       "Could not find a place for the provided id",
       404
+    );
+    return next(error);
+  }
+
+  try {
+    const sess = await startSession();
+    sess.startTransaction();
+    await place.remove({ session: sess });
+    place.creator.places.pull(place);
+    await place.creator.save({ session: sess });
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not delete place.",
+      500
     );
     return next(error);
   }

@@ -1,13 +1,13 @@
-import mongoose, { Document, model, Schema } from "mongoose";
+import mongoose, { model, Schema, Types } from "mongoose";
 import { LocationT } from "../lib/types";
 
-interface PlaceSchema {
+export interface PlaceSchema {
   title: string;
   description: string;
   image: string;
   address: string;
   location: LocationT;
-  creator: any;
+  creator: Types.ObjectId;
 }
 
 const placeSchema = new Schema<PlaceSchema>({
@@ -19,7 +19,7 @@ const placeSchema = new Schema<PlaceSchema>({
     lat: { type: Number, required: true },
     lng: { type: Number, required: true },
   },
-  creator: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
+  creator: { type: Schema.Types.ObjectId, required: true, ref: "User" },
 });
 
 const PlaceModel = model<PlaceSchema>("Place", placeSchema);
