@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import { UserT } from "../lib/types";
 import { v4 as uuidv4 } from "uuid";
 import { title } from "process";
@@ -15,11 +15,7 @@ const DUMMY_USERS = [
   },
 ];
 
-export const getUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getUsers: RequestHandler = async (req, res, next) => {
   let users;
   try {
     users = await UserModel.find({}, "-password");
@@ -33,11 +29,7 @@ export const getUsers = async (
   res.json({ users: users.map((user) => user.toObject({ getters: true })) });
 };
 
-export const signup = async (
-  req: Request<{}, {}, UserT>,
-  res: Response,
-  next: NextFunction
-) => {
+export const signup: RequestHandler<{}, {}, UserT> = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(
@@ -80,11 +72,11 @@ export const signup = async (
   res.status(201).json({ user: createdUser.toObject({ getters: true }) });
 };
 
-export const login = async (
-  req: Request<{}, {}, { email: string; password: string }>,
-  res: Response,
-  next: NextFunction
-) => {
+export const login: RequestHandler<
+  {},
+  {},
+  { email: string; password: string }
+> = async (req, res, next) => {
   const { email, password } = req.body;
 
   let existingUser;

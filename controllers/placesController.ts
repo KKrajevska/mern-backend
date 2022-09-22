@@ -1,12 +1,12 @@
 import { create } from "domain";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import { PlaceModelT, PlaceT } from "../lib/types";
 import { HttpError } from "../models/httpError";
 import { v4 as uuidv4 } from "uuid";
 import { validationResult } from "express-validator";
-import PlaceModel from "../models/place";
+import PlaceModel, { PlaceSchema } from "../models/place";
 import UserModel, { UserSchema } from "../models/user";
-import { startSession } from "mongoose";
+import { startSession, Types } from "mongoose";
 let DUMMY_PLACES: PlaceT[] = [
   {
     id: "p1",
@@ -21,11 +21,7 @@ let DUMMY_PLACES: PlaceT[] = [
   },
 ];
 
-export const getPlaceById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getPlaceById: RequestHandler = async (req, res, next) => {
   const placeId = req.params.pid;
   let place;
   try {
@@ -50,11 +46,7 @@ export const getPlaceById = async (
   res.json({ place: place.toObject({ getters: true }) });
 };
 
-export const getPlacesByUserId = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getPlacesByUserId: RequestHandler = async (req, res, next) => {
   const userId = req.params.uid;
   let places;
 
@@ -82,10 +74,10 @@ export const getPlacesByUserId = async (
   });
 };
 
-export const createPlace = async (
-  req: Request<{}, {}, PlaceT>,
-  res: Response,
-  next: NextFunction
+export const createPlace: RequestHandler<{}, {}, PlaceT> = async (
+  req,
+  res,
+  next
 ) => {
   const errors = validationResult(req);
 
@@ -138,11 +130,11 @@ export const createPlace = async (
   res.status(201).json({ place: createdPlace });
 };
 
-export const updatePlace = async (
-  req: Request<{ pid: string }, {}, { title: string; description: string }>,
-  res: Response,
-  next: NextFunction
-) => {
+export const updatePlace: RequestHandler<
+  { pid: string },
+  {},
+  { title: string; description: string }
+> = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -189,10 +181,10 @@ export const updatePlace = async (
   res.status(200).json({ place: place.toObject({ getters: true }) });
 };
 
-export const deletePlace = async (
-  req: Request<{ pid: string }>,
-  res: Response,
-  next: NextFunction
+export const deletePlace: RequestHandler<{ pid: string }> = async (
+  req,
+  res,
+  next
 ) => {
   const placeId = req.params.pid;
 
@@ -223,9 +215,13 @@ export const deletePlace = async (
     const sess = await startSession();
     sess.startTransaction();
     await place.remove({ session: sess });
+
     place.creator.places.pull(place);
-    await place.creator.save({ session: sess });
+    const creator = new UserModel(place.creator, { _id: false });
+    await creator.save({ session: sess });
+    await sess.commitTransaction();
   } catch (err) {
+    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not delete place.",
       500
