@@ -1,19 +1,8 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { RequestHandler } from "express";
 import { UserT } from "../lib/types";
-import { v4 as uuidv4 } from "uuid";
-import { title } from "process";
 import { HttpError } from "../models/httpError";
 import UserModel from "../models/user";
 import { validationResult } from "express-validator";
-
-const DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "Max Schwartz",
-    email: "test@test.com",
-    password: "testers",
-  },
-];
 
 export const getUsers: RequestHandler = async (req, res, next) => {
   let users;

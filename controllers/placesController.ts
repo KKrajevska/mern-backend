@@ -1,25 +1,10 @@
-import { create } from "domain";
-import { NextFunction, Request, RequestHandler, Response } from "express";
-import { PlaceModelT, PlaceT } from "../lib/types";
+import { RequestHandler } from "express";
+import { PlaceT } from "../lib/types";
 import { HttpError } from "../models/httpError";
-import { v4 as uuidv4 } from "uuid";
 import { validationResult } from "express-validator";
-import PlaceModel, { PlaceSchema } from "../models/place";
+import PlaceModel from "../models/place";
 import UserModel, { UserSchema } from "../models/user";
-import { startSession, Types } from "mongoose";
-let DUMMY_PLACES: PlaceT[] = [
-  {
-    id: "p1",
-    title: "Empire State Building",
-    description: "One of the most famous skyscrapers in the world!",
-    location: {
-      lat: 40.7484474,
-      lng: -73.9871516,
-    },
-    address: "20 W 34th St., New York, NY 10001",
-    creator: "u1",
-  },
-];
+import { startSession } from "mongoose";
 
 export const getPlaceById: RequestHandler = async (req, res, next) => {
   const placeId = req.params.pid;

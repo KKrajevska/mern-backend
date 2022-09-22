@@ -1,4 +1,4 @@
-import mongoose, { model, Schema, Types } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 import { LocationT } from "../lib/types";
 
 export interface PlaceSchema {
