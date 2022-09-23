@@ -18,7 +18,7 @@ const userSchema = new Schema<UserSchema>({
   places: [{ type: Schema.Types.ObjectId, required: true, ref: "Place" }],
 });
 
-userSchema.plugin(mongooseUniqueValidator);
+// userSchema.plugin(mongooseUniqueValidator);
 
 const UserModel = model<UserSchema>("User", userSchema);
 

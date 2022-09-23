@@ -70,12 +70,12 @@ export const createPlace: RequestHandler<{}, {}, PlaceT> = async (
     throw new HttpError("Invalid inputs passed, please check your data", 422);
   }
 
-  const { title, description, location, address, creator } = req.body;
+  const { title, description, address, creator } = req.body;
   const createdPlace = new PlaceModel({
     title,
     description,
     address,
-    location,
+    location: { lat: 40.7484405, lng: -73.9878531 },
     image:
       "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Empire_State_Building_%28aerial_view%29.jpg/400px-Empire_State_Building_%28aerial_view%29.jpg",
     creator,
@@ -202,7 +202,7 @@ export const deletePlace: RequestHandler<{ pid: string }> = async (
     await place.remove({ session: sess });
 
     place.creator.places.pull(place);
-    const creator = new UserModel(place.creator, { _id: false });
+    const creator = new UserModel(place.creator, { id: true });
     await creator.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
