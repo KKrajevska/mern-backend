@@ -20,6 +20,7 @@ export const getUsers: RequestHandler = async (req, res, next) => {
 
 export const signup: RequestHandler<{}, {}, UserT> = async (req, res, next) => {
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
     return next(
       new HttpError("Invalid inputs passed, please check your data.", 422)
@@ -48,7 +49,7 @@ export const signup: RequestHandler<{}, {}, UserT> = async (req, res, next) => {
     name,
     email,
     password,
-    image: "https://live.staticflickr.com/7631/26849088292_36fc52ee90_b.jpg",
+    image: req.file && req.file.path,
     places,
   });
 

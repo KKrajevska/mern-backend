@@ -5,6 +5,7 @@ import { validationResult } from "express-validator";
 import PlaceModel from "../models/place";
 import UserModel, { UserSchema } from "../models/user";
 import { startSession } from "mongoose";
+import { unlink } from "fs";
 
 export const getPlaceById: RequestHandler = async (req, res, next) => {
   const placeId = req.params.pid;
@@ -76,8 +77,7 @@ export const createPlace: RequestHandler<{}, {}, PlaceT> = async (
     description,
     address,
     location: { lat: 40.7484405, lng: -73.9878531 },
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Empire_State_Building_%28aerial_view%29.jpg/400px-Empire_State_Building_%28aerial_view%29.jpg",
+    image: req.file && req.file.path,
     creator,
   });
 
@@ -196,6 +196,7 @@ export const deletePlace: RequestHandler<{ pid: string }> = async (
     return next(error);
   }
 
+  const imagePath = place.image;
   try {
     const sess = await startSession();
     sess.startTransaction();
@@ -206,13 +207,16 @@ export const deletePlace: RequestHandler<{ pid: string }> = async (
     await creator.save({ session: sess });
     await sess.commitTransaction();
   } catch (err) {
-    console.log(err);
     const error = new HttpError(
       "Something went wrong, could not delete place.",
       500
     );
     return next(error);
   }
+
+  unlink(imagePath, (err) => {
+    console.log(err);
+  });
 
   res.status(200).json({ message: "Deleted place" });
 };
