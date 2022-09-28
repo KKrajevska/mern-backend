@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { PlaceT } from "../lib/types";
+import { PlaceT, Indexed } from "../lib/types";
 import { HttpError } from "../models/httpError";
 import { validationResult } from "express-validator";
 import PlaceModel from "../models/place";
@@ -119,7 +119,7 @@ export const updatePlace: RequestHandler<
   { pid: string },
   {},
   { title: string; description: string }
-> = async (req, res, next) => {
+> = async (req: Indexed, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -150,6 +150,11 @@ export const updatePlace: RequestHandler<
     );
     return next(error);
   }
+
+  if (place.creator.toString() !== req.userData.userId) {
+    const error = new HttpError("You are not allowed to edit this place", 401);
+    return next(error);
+  }
   place.title = title;
   place.description = description;
 
@@ -167,7 +172,7 @@ export const updatePlace: RequestHandler<
 };
 
 export const deletePlace: RequestHandler<{ pid: string }> = async (
-  req,
+  req: Indexed,
   res,
   next
 ) => {
@@ -210,6 +215,16 @@ export const deletePlace: RequestHandler<{ pid: string }> = async (
     const error = new HttpError(
       "Something went wrong, could not delete place.",
       500
+    );
+    return next(error);
+  }
+
+  console.log("cr", place.creator.id);
+
+  if (place.creator.id !== req.userData.userId) {
+    const error = new HttpError(
+      "You are not allowed to delete this place",
+      401
     );
     return next(error);
   }

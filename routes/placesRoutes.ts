@@ -8,12 +8,15 @@ import {
 } from "../controllers/placesController";
 import { check } from "express-validator";
 import fileUpload from "../middleware/fileUpload";
+import checkAuth from "../middleware/checkAuth";
 
 const placesRoutes = express.Router();
 
 placesRoutes.get("/:pid", getPlaceById);
 
 placesRoutes.get("/user/:uid", getPlacesByUserId);
+
+placesRoutes.use(checkAuth);
 
 placesRoutes.post(
   "/",

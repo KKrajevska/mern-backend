@@ -3,6 +3,7 @@ import mongooseUniqueValidator from "mongoose-unique-validator";
 import { PlaceSchema } from "./place";
 
 export interface UserSchema {
+  id?: string;
   name: string;
   email: string;
   password: string;

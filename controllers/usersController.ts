@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { UserT } from "../lib/types";
+import { SUPERSECRET_TOKEN, UserT } from "../lib/types";
 import { HttpError } from "../models/httpError";
 import UserModel from "../models/user";
 import { validationResult } from "express-validator";
@@ -144,7 +144,7 @@ export const login: RequestHandler<
   try {
     token = sign(
       { userId: existingUser.id, email: existingUser.email },
-      "supersecret_dont_share",
+      SUPERSECRET_TOKEN,
       { expiresIn: "1h" }
     );
   } catch (err) {

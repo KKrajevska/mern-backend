@@ -28,3 +28,9 @@ export interface UserT {
   password: string;
   places: string;
 }
+
+export const SUPERSECRET_TOKEN = "supersecret_dont_share";
+
+export type Indexed = {
+  [key: string]: any;
+};
