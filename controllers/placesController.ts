@@ -61,7 +61,7 @@ export const getPlacesByUserId: RequestHandler = async (req, res, next) => {
 };
 
 export const createPlace: RequestHandler<{}, {}, PlaceT> = async (
-  req,
+  req: Indexed,
   res,
   next
 ) => {
@@ -78,13 +78,13 @@ export const createPlace: RequestHandler<{}, {}, PlaceT> = async (
     address,
     location: { lat: 40.7484405, lng: -73.9878531 },
     image: req.file && req.file.path,
-    creator,
+    creator: req.userData.userId,
   });
 
   let user;
 
   try {
-    user = await UserModel.findById(creator);
+    user = await UserModel.findById(req.userData.userId);
   } catch (err) {
     const error = new HttpError(
       "Creating place failed, please try again later",

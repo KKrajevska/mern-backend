@@ -1,10 +1,11 @@
 import { RequestHandler } from "express";
-import { SUPERSECRET_TOKEN, UserT } from "../lib/types";
+import { UserT } from "../lib/types";
 import { HttpError } from "../models/httpError";
 import UserModel from "../models/user";
 import { validationResult } from "express-validator";
 import { compare, hash } from "bcryptjs";
 import { sign } from "jsonwebtoken";
+import sanitizedConfig from "../config";
 
 export const getUsers: RequestHandler = async (req, res, next) => {
   let users;
@@ -144,7 +145,7 @@ export const login: RequestHandler<
   try {
     token = sign(
       { userId: existingUser.id, email: existingUser.email },
-      SUPERSECRET_TOKEN,
+      sanitizedConfig.JWT_KEY,
       { expiresIn: "1h" }
     );
   } catch (err) {

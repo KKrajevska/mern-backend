@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { JwtPayload, verify } from "jsonwebtoken";
-import { Indexed, SUPERSECRET_TOKEN } from "../lib/types";
+import sanitizedConfig from "../config";
+import { Indexed } from "../lib/types";
 import { HttpError } from "../models/httpError";
 
 interface UserJwtPayload extends JwtPayload {
@@ -18,7 +19,7 @@ const checkAuth: RequestHandler = (req: Indexed, res, next) => {
     if (!token) {
       throw new Error("Authorization failed!");
     }
-    const decodedToken = <UserJwtPayload>verify(token, SUPERSECRET_TOKEN);
+    const decodedToken = <UserJwtPayload>verify(token, sanitizedConfig.JWT_KEY);
     req.userData = { userId: decodedToken.userId };
     next();
   } catch (err) {
